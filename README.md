@@ -1,5 +1,5 @@
 # Portalum.Fiscalization
-Client to Efsta Service
+Client for Efsta EFR
 
 - https://www.efsta.eu/produkte/efsta-system
 - https://public.efsta.net/efr/
