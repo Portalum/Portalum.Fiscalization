@@ -5,7 +5,9 @@ VisualStudioVersion = 17.3.32819.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Portalum.Fiscalization.TestConsole", "Portalum.Fiscalization.TestConsole\Portalum.Fiscalization.TestConsole.csproj", "{B6160648-6620-46AC-A67E-A0CE0AC2C023}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portalum.Fiscalization", "Portalum.Fiscalization\Portalum.Fiscalization.csproj", "{B1C5E2C8-CFA0-4A7A-8206-86F418F451BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Portalum.Fiscalization", "Portalum.Fiscalization\Portalum.Fiscalization.csproj", "{B1C5E2C8-CFA0-4A7A-8206-86F418F451BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portalum.Fiscalization.SimplePos", "Portalum.Fiscalization.SimplePos\Portalum.Fiscalization.SimplePos.csproj", "{057AFFE1-E975-4ACA-BF5D-749BDC5E3719}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{B1C5E2C8-CFA0-4A7A-8206-86F418F451BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1C5E2C8-CFA0-4A7A-8206-86F418F451BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1C5E2C8-CFA0-4A7A-8206-86F418F451BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{057AFFE1-E975-4ACA-BF5D-749BDC5E3719}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{057AFFE1-E975-4ACA-BF5D-749BDC5E3719}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{057AFFE1-E975-4ACA-BF5D-749BDC5E3719}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{057AFFE1-E975-4ACA-BF5D-749BDC5E3719}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
