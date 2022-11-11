@@ -7,5 +7,7 @@
         public ShoppingCartItem[] ShoppingCartItems { get; set; }
         public string FiscalData { get; set; }
         public string PosUniqueIdentifier { get; set; }
+
+        public string[] AdditionalLines { get; set; }
     }
 }

@@ -76,7 +76,7 @@ var registerRequest = new RegisterRequest
                 {
                     TaxGroup = "B",
                     TaxPercent = "10",
-                    Net = "4.55",
+                    NetAmount = "4.55",
                     TaxAmount = "0.45",
                     GrossAmount = "5.00"
                 }

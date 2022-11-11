@@ -26,7 +26,7 @@ namespace Portalum.Fiscalization.Models
         /// Excluding Tax
         /// </summary>
         [JsonPropertyName("Net")]
-        public string Net { get; set; }
+        public string NetAmount { get; set; }
 
         /// <summary>
         /// Tax Amount

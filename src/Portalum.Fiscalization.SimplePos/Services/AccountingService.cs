@@ -7,7 +7,6 @@ using Portalum.Fiscalization.SimplePos.Models;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using System;
 using System.Configuration;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -65,6 +64,60 @@ namespace Portalum.Fiscalization.SimplePos.Services
             await File.WriteAllTextAsync(this._dataFile, $"{this._lastSequentialReceiptNumber}", cancellationToken);
         }
 
+        private string GetTaxGroupCodeAustria(decimal tax)
+        {
+            switch (tax)
+            {
+                case 20:
+                    return "A";
+                case 10:
+                    return "B";
+                case 13:
+                    return "C";
+                case 0:
+                    return "D";
+                case 19:
+                    return "E";
+                case 7:
+                    return "F";
+                case 5:
+                    return "G";
+
+                default:
+                    break;
+            }
+
+            return "";
+        }
+
+        private string GetTaxGroupCodeGermany(decimal tax)
+        {
+            switch (tax)
+            {
+                case 19:
+                    return "A";
+                case 7:
+                    return "B";
+                case 10.7m:
+                    return "C";
+                case 5.5m:
+                    return "D";
+                case 0:
+                    return "E";
+                case 16:
+                    return "H";
+                case 5:
+                    return "I";
+                case 9.5m:
+                    return "J";
+
+                default:
+                    break;
+            }
+
+            return "";
+        }
+
         public async Task<bool> PrintReceiptAsync(ShoppingCartItem[] shoppingCartItems)
         {
             System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
@@ -89,11 +142,46 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     ItemNumber = article.EanCode,
                     ItemIdentity = $"{article.Id}",
                     PositionAmount = $"{item.Quantity * item.PricePerUnit:0.00}",
-                    Quantity = $"{item.Quantity:0.00}",
-                    UnitPrice = $"{item.PricePerUnit:0.00}",
-                    TaxGroup = "A"
+                    Quantity = $"{item.Quantity}",
+                    Description = article.Name,
+                    //UnitPrice = $"{item.PricePerUnit:0.00}",
+                    TaxGroup = this.GetTaxGroupCodeGermany(article.Tax)
                 };
             });
+
+            var elementsWithTaxGroup = shoppingCartItems.Select(item =>
+            {
+                var article = articles.Where(article => article.Id == item.ArticleId).FirstOrDefault();
+
+                return new
+                {
+                    Quantity = item.Quantity,
+                    UnitPrice = item.PricePerUnit,
+                    Tax = article.Tax,
+                    TaxGroup = this.GetTaxGroupCodeGermany(article.Tax)
+                };
+            });
+
+            var taxTempInfos = elementsWithTaxGroup.GroupBy(o => new { o.TaxGroup, o.Tax }).Select(o => new
+            {
+                TaxGroup = o.Key.TaxGroup,
+                Tax = o.Key.Tax,
+                GrossAmount = o.Select(x => x.Quantity * x.UnitPrice).Sum()
+            });
+
+            var taxElements = taxTempInfos.Select(o =>
+            {
+                var netAmount = Math.Round(o.GrossAmount / (1 + (o.Tax / 100)), 2);
+
+                return new TaxElement
+                {
+                    TaxGroup = o.TaxGroup,
+                    GrossAmount = $"{o.GrossAmount:0.00}",
+                    TaxAmount = $"{o.GrossAmount - netAmount:0.00}",
+                    TaxPercent = $"{o.Tax:0.00}",
+                    NetAmount = $"{netAmount:0.00}"
+                };
+            }).ToArray();
 
             var registerRequest = new RegisterRequest
             {
@@ -110,16 +198,15 @@ namespace Portalum.Fiscalization.SimplePos.Services
                         SequentialReceiptNumber = $"{this._lastSequentialReceiptNumber}",
                         Total = $"{sumTotal:0.00}",
                         PositionElements = elements.ToArray(),
-                        TaxElements = new TaxElement[]
+                        PaymentElements = new PaymentElement[]
                         {
-                            new TaxElement
+                            new PaymentElement
                             {
-                                TaxGroup = "A",
-                                GrossAmount = "12",
-                                Net = "10",
-                                TaxAmount = "1.2"
+                                Description = "Cash",
+                                PaymentAmount = $"{sumTotal:0.00}"
                             }
-                        }
+                        },
+                        TaxElements = taxElements
                     }
                 }
             };
@@ -136,13 +223,18 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     {
                         return false;
                     }
+                    if (string.IsNullOrEmpty(response.TransactionCompletion.FiscalData?.Code))
+                    {
+                        return false;
+                    }
+
+                    
 
                     await this.SaveLastSequentialReceiptNumberAsync();
 
-                    //Console.WriteLine(response.TransactionCompletion.Result.ResultCode);
-
                     var printJobData = new PrintJobData
                     {
+                        AdditionalLines = response.TransactionCompletion.Result.Warning,
                         ShoppingCartItems = shoppingCartItems,
                         Cashier = operatorName,
                         PosUniqueIdentifier = $"{storeId}-{cashRegisterTerminalNumber}",
@@ -177,6 +269,8 @@ namespace Portalum.Fiscalization.SimplePos.Services
                 var e = new EPSON();
                 await printer.WriteAsync(
                   ByteSplicer.Combine(
+                    e.SetStyles(PrintStyle.None),
+                    e.SetStyles(PrintStyle.Bold),
                     e.CenterAlign(),
                     e.PrintLine(""),
                     e.PrintLine("PORTALUM"),
@@ -216,6 +310,20 @@ namespace Portalum.Fiscalization.SimplePos.Services
                       )
                     );
 
+                if (printJobData.AdditionalLines != null)
+                {
+                    foreach (var additionalLine in printJobData.AdditionalLines)
+                    {
+                        await printer.WriteAsync(
+                          ByteSplicer.Combine(
+                            e.SetStyles(PrintStyle.None),
+                            e.RightAlign(),
+                            e.PrintLine(additionalLine)
+                          )
+                        );
+                    }
+                }
+
                 await printer.WriteAsync(
                   ByteSplicer.Combine(
                     e.PrintLine(""),
@@ -227,7 +335,6 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     e.PrintQRCode(printJobData.FiscalData, TwoDimensionCodeType.QRCODE_MODEL2, Size2DCode.LARGE, CorrectionLevel2DCode.PERCENT_7),
                     e.PrintLine(""),
                     e.FullCutAfterFeed(10)
-
                   )
                 );
 
