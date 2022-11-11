@@ -6,8 +6,11 @@ using Portalum.Fiscalization.Models;
 using Portalum.Fiscalization.SimplePos.Models;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using System;
+using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Portalum.Fiscalization.SimplePos.Services
@@ -15,10 +18,47 @@ namespace Portalum.Fiscalization.SimplePos.Services
     public class AccountingService : IAccountingService
     {
         private readonly IArticleRepository _articleRepository;
+        private readonly string _dataFile = "SequentialReceiptNumber.data";
+        private int _lastSequentialReceiptNumber;
+        private readonly HttpClient _httpClient;
+        private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
         public AccountingService(IArticleRepository articleRepository)
         {
             this._articleRepository = articleRepository;
+            this.LoadLastSequentialReceiptNumberAsync().GetAwaiter().GetResult();
+
+            this._httpClient = new HttpClient();
+            this._httpClient.BaseAddress = new Uri("http://localhost:5618");
+        }
+
+        private async Task LoadLastSequentialReceiptNumberAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (File.Exists(this._dataFile))
+                {
+                    var temp = await File.ReadAllTextAsync(this._dataFile, cancellationToken).ConfigureAwait(false);
+                    if (!int.TryParse(temp, out var sequentialReceiptNumber))
+                    {
+                        this._lastSequentialReceiptNumber = 0;
+                        return;
+                    }
+
+                    this._lastSequentialReceiptNumber = sequentialReceiptNumber;
+                }
+
+                this._lastSequentialReceiptNumber = 1;
+            }
+            catch (Exception exception)
+            {
+                this._lastSequentialReceiptNumber = -1;
+            }
+        }
+
+        private async Task SaveLastSequentialReceiptNumberAsync(CancellationToken cancellationToken = default)
+        {
+            await File.WriteAllTextAsync(this._dataFile, $"{this._lastSequentialReceiptNumber}", cancellationToken);
         }
 
         public async Task<bool> PrintReceiptAsync(ShoppingCartItem[] shoppingCartItems)
@@ -29,6 +69,12 @@ namespace Portalum.Fiscalization.SimplePos.Services
 
             var articles = await this._articleRepository.QueryAsync("");
 
+            var storeId = ConfigurationManager.AppSettings["StroreId"];
+            var cashRegisterTerminalNumber = ConfigurationManager.AppSettings["CashRegisterTerminalNumber"];
+            var operatorId = ConfigurationManager.AppSettings["OperatorId"];
+            var operatorName = ConfigurationManager.AppSettings["OperatorName"];
+            var vatIdentificationNumber = ConfigurationManager.AppSettings["VatIdentificationNumber"];
+            var receiptPrinterIpAddress = ConfigurationManager.AppSettings["ReceiptPrinterIpAddress"];
 
             var elements = shoppingCartItems.Select(item =>
             {
@@ -51,13 +97,13 @@ namespace Portalum.Fiscalization.SimplePos.Services
                 {
                     EfstaSimpleReceipt = new EfstaSimpleReceipt
                     {
-                        StroreId = "ST1",
-                        CashRegisterTerminalNumber = "1",
-                        OperatorId = "1",
-                        OperatorName = "Max Mustermann",
+                        StroreId = storeId,
+                        CashRegisterTerminalNumber = cashRegisterTerminalNumber,
+                        OperatorId = operatorId,
+                        OperatorName = operatorName,
                         ReceiptDate = DateTime.Now,
                         ProcessStartTimestamp = DateTime.Now.AddMinutes(-1),
-                        SequentialReceiptNumber = "1",
+                        SequentialReceiptNumber = $"{this._lastSequentialReceiptNumber}",
                         Total = $"{sumTotal:0.00}",
                         PositionElements = elements.ToArray(),
                         TaxElements = new TaxElement[]
@@ -74,27 +120,52 @@ namespace Portalum.Fiscalization.SimplePos.Services
                 }
             };
 
-            using var httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri("http://localhost:5618");
-
-            var efstaClient = new EfstaClient(new NullLogger<EfstaClient>(), httpClient);
-            var response = await efstaClient.RegisterAsync(registerRequest, "ATU57780814");
-            if (response == null)
+            if (await this._syncLock.WaitAsync(10000))
             {
-                return false;
+                try
+                {
+                    this._lastSequentialReceiptNumber++;
+
+                    var efstaClient = new EfstaClient(new NullLogger<EfstaClient>(), this._httpClient);
+                    var response = await efstaClient.RegisterAsync(registerRequest, vatIdentificationNumber);
+                    if (response == null)
+                    {
+                        return false;
+                    }
+
+                    await this.SaveLastSequentialReceiptNumberAsync();
+
+                    //Console.WriteLine(response.TransactionCompletion.Result.ResultCode);
+
+                    var printJobData = new PrintJobData
+                    {
+                        ShoppingCartItems = shoppingCartItems,
+                        Cashier = operatorName,
+                        ReceiptPrinterIpAddress = receiptPrinterIpAddress,
+                        FiscalData = response.TransactionCompletion.FiscalData.Code
+                    };
+
+                    return await this.PrintReceiptAsync(printJobData);
+                }
+                finally
+                {
+                    this._syncLock.Release();
+                }
             }
 
-            //Console.WriteLine(response.TransactionCompletion.Result.ResultCode);
+            return false;
+        }
 
-
-            var hostnameOrIp = "10.15.0.165";
+        private async Task<bool> PrintReceiptAsync(PrintJobData printJobData)
+        {
             var port = 9100;
-            var printer = new ImmediateNetworkPrinter(
-                new ImmediateNetworkPrinterSettings
-                {
-                    ConnectionString = $"{hostnameOrIp}:{port}",
-                    PrinterName = "TestPrinter"
-                });
+            var printerSettings = new ImmediateNetworkPrinterSettings
+            {
+                ConnectionString = $"{printJobData.ReceiptPrinterIpAddress}:{port}",
+                PrinterName = "TestPrinter"
+            };
+
+            var printer = new ImmediateNetworkPrinter(printerSettings);
 
             try
             {
@@ -107,16 +178,16 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     e.PrintLine("Riedgasse 50"),
                     e.PrintLine("6850 Dornbirn"),
                     e.PrintLine(""),
-                    e.PrintLine("BelegNummer: 12345"),
+                    e.PrintLine($"BelegNummer: {this._lastSequentialReceiptNumber:000000}"),
                     e.PrintLine(""),
                     e.SetStyles(PrintStyle.Underline),
-                    e.PrintLine("Es bediente sie Reinhard Feuerstein"),
+                    e.PrintLine($"Es bediente sie {printJobData.Cashier}"),
                     e.SetStyles(PrintStyle.None),
                     e.PrintLine("")
                   )
                 );
 
-                foreach (var shoppingCartItem in shoppingCartItems)
+                foreach (var shoppingCartItem in printJobData.ShoppingCartItems)
                 {
                     var price = shoppingCartItem.PricePerUnit * shoppingCartItem.Quantity;
 
@@ -137,19 +208,19 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     e.PrintLine(""),
                     e.PrintLine(""),
                     e.CenterAlign(),
-                    e.PrintQRCode(response.TransactionCompletion.FiscalData.Code, TwoDimensionCodeType.QRCODE_MODEL2, Size2DCode.LARGE, CorrectionLevel2DCode.PERCENT_7),
+                    e.PrintQRCode(printJobData.FiscalData, TwoDimensionCodeType.QRCODE_MODEL2, Size2DCode.LARGE, CorrectionLevel2DCode.PERCENT_7),
                     e.PrintLine(""),
                     e.FullCutAfterFeed(10)
 
                   )
                 );
+
+                return true;
             }
             catch (Exception exception)
             {
                 return false;
             }
-
-            return true;
         }
     }
 }

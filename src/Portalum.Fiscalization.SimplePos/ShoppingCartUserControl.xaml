@@ -42,6 +42,6 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <Button Content="Bezahlen" Margin="10,0,10,13" RenderTransformOrigin="-0.032,-1.82" Height="35" VerticalAlignment="Bottom" Click="Button_Click" FontSize="20"/>
+        <Button Content="Bezahlen" RenderTransformOrigin="-0.032,-1.82" Click="Button_Click" Background="#607686" Foreground="White" FontSize="20" Height="48" VerticalAlignment="Bottom"/>
     </Grid>
 </UserControl>

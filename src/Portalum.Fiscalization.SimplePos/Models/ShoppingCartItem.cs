@@ -11,11 +11,5 @@
         {
             get { return this.Quantity * this.PricePerUnit; }
         }
-
-        //public override string ToString()
-        //{
-        //    var totalPrice = this.Quantity * this.PricePerUnit;
-        //    return $"{this.Quantity}x {this.ArticleName.PadRight(60 - this.ArticleName.Length, ' ')} {totalPrice:0.00}€";
-        //}
     }
 }
