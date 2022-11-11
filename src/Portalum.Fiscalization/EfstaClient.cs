@@ -49,26 +49,35 @@ namespace Portalum.Fiscalization
             using var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutInSeconds));
             using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token, timeoutCancellationTokenSource.Token);
 
-            using var response = await this._httpClient.PostAsJsonAsync($"/register?RN={client}&TaxId={taxId}",
-                request,
-                this._jsonSerializerOptions,
-                linkedCancellationTokenSource.Token);
-
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                this._logger.LogWarning($"{nameof(RegisterAsync)} - {response.StatusCode}");
-                return null;
+                using var response = await this._httpClient.PostAsJsonAsync($"/register?RN={client}&TaxId={taxId}",
+                    request,
+                    this._jsonSerializerOptions,
+                    linkedCancellationTokenSource.Token);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    this._logger.LogWarning($"{nameof(RegisterAsync)} - {response.StatusCode}");
+                    return null;
+                }
+
+                var json = await response.Content.ReadAsStringAsync(linkedCancellationTokenSource.Token);
+
+                if (this._logger.IsEnabled(LogLevel.Trace))
+                {
+                    var prettyJson = this.PrettyJson(json);
+                    this._logger.LogTrace($"{nameof(RegisterAsync)} - {prettyJson}");
+                }
+
+                return JsonSerializer.Deserialize<RegisterResponse>(json);
+            }
+            catch (Exception exception)
+            {
+                this._logger.LogError(exception, $"{nameof(RegisterAsync)}");
             }
 
-            var json = await response.Content.ReadAsStringAsync(linkedCancellationTokenSource.Token);
-
-            if (this._logger.IsEnabled(LogLevel.Trace))
-            {
-                var prettyJson = this.PrettyJson(json);
-                this._logger.LogTrace($"{nameof(RegisterAsync)} - {prettyJson}");
-            }
-
-            return JsonSerializer.Deserialize<RegisterResponse>(json);
+            return null;
         }
 
         /// <summary>
@@ -78,26 +87,35 @@ namespace Portalum.Fiscalization
         public async Task<StateResponse> GetStateAsync(
             CancellationToken cancellationToken = default)
         {
-            using var response = await this._httpClient.GetAsync("/state", cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                this._logger.LogWarning($"{nameof(GetStateAsync)} - {response.StatusCode}");
-                return null;
+                using var response = await this._httpClient.GetAsync("/state", cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    this._logger.LogWarning($"{nameof(GetStateAsync)} - {response.StatusCode}");
+                    return null;
+                }
+
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (this._logger.IsEnabled(LogLevel.Trace))
+                {
+                    var prettyJson = this.PrettyJson(json);
+                    this._logger.LogTrace($"{nameof(GetStateAsync)} - {prettyJson}");
+                }
+
+                return JsonSerializer.Deserialize<StateResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            catch (Exception exception)
+            {
+                this._logger.LogError(exception, $"{nameof(GetStateAsync)}");
             }
 
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            if (this._logger.IsEnabled(LogLevel.Trace))
-            {
-                var prettyJson = this.PrettyJson(json);
-                this._logger.LogTrace($"{nameof(GetStateAsync)} - {prettyJson}");
-            }
-
-            return JsonSerializer.Deserialize<StateResponse>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            return null;
         }
 
         private string PrettyJson(string unPrettyJson)

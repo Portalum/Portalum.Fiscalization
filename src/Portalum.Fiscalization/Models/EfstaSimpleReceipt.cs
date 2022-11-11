@@ -72,6 +72,9 @@ namespace Portalum.Fiscalization.Models
         /// <summary>
         /// StroreId
         /// </summary>
+        /// <remarks>
+        /// Transaction Location
+        /// </remarks>
         [JsonPropertyName("TL")]
         public string StroreId { get; set; }
 
