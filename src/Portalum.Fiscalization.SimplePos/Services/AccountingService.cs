@@ -7,6 +7,7 @@ using Portalum.Fiscalization.SimplePos.Models;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -19,7 +20,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
     {
         private readonly IArticleRepository _articleRepository;
         private readonly string _dataFile = "SequentialReceiptNumber.data";
-        private int _lastSequentialReceiptNumber;
+        private ulong _lastSequentialReceiptNumber;
         private readonly HttpClient _httpClient;
         private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
@@ -36,23 +37,26 @@ namespace Portalum.Fiscalization.SimplePos.Services
         {
             try
             {
-                if (File.Exists(this._dataFile))
+                if (!File.Exists(this._dataFile))
                 {
-                    var temp = await File.ReadAllTextAsync(this._dataFile, cancellationToken).ConfigureAwait(false);
-                    if (!int.TryParse(temp, out var sequentialReceiptNumber))
-                    {
-                        this._lastSequentialReceiptNumber = 0;
-                        return;
-                    }
-
-                    this._lastSequentialReceiptNumber = sequentialReceiptNumber;
+                    this._lastSequentialReceiptNumber = 1;
+                    return;
                 }
 
-                this._lastSequentialReceiptNumber = 1;
+                var temp = await File.ReadAllTextAsync(this._dataFile, cancellationToken).ConfigureAwait(false);
+                if (!ulong.TryParse(temp, out var sequentialReceiptNumber))
+                {
+                    this._lastSequentialReceiptNumber = 0;
+                    return;
+                }
+
+                this._lastSequentialReceiptNumber = sequentialReceiptNumber;
+
+                
             }
             catch (Exception exception)
             {
-                this._lastSequentialReceiptNumber = -1;
+                this._lastSequentialReceiptNumber = 0;
             }
         }
 
@@ -141,6 +145,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     {
                         ShoppingCartItems = shoppingCartItems,
                         Cashier = operatorName,
+                        PosUniqueIdentifier = $"{storeId}-{cashRegisterTerminalNumber}",
                         ReceiptPrinterIpAddress = receiptPrinterIpAddress,
                         FiscalData = response.TransactionCompletion.FiscalData.Code
                     };
@@ -162,7 +167,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
             var printerSettings = new ImmediateNetworkPrinterSettings
             {
                 ConnectionString = $"{printJobData.ReceiptPrinterIpAddress}:{port}",
-                PrinterName = "TestPrinter"
+                PrinterName = "PosReceiptPrinter001"
             };
 
             var printer = new ImmediateNetworkPrinter(printerSettings);
@@ -178,7 +183,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     e.PrintLine("Riedgasse 50"),
                     e.PrintLine("6850 Dornbirn"),
                     e.PrintLine(""),
-                    e.PrintLine($"BelegNummer: {this._lastSequentialReceiptNumber:000000}"),
+                    e.PrintLine($"Belegnummer: {DateTime.Today.Year}-{printJobData.PosUniqueIdentifier}-{this._lastSequentialReceiptNumber:000000}"),
                     e.PrintLine(""),
                     e.SetStyles(PrintStyle.Underline),
                     e.PrintLine($"Es bediente sie {printJobData.Cashier}"),
@@ -199,6 +204,17 @@ namespace Portalum.Fiscalization.SimplePos.Services
                       )
                     );
                 }
+
+                var total = printJobData.ShoppingCartItems.Select(o => o.Quantity * o.PriceTotal).Sum();
+
+                await printer.WriteAsync(
+                      ByteSplicer.Combine(
+                        e.RightAlign(),
+                        e.PrintLine("------------------------------------------"),
+                        e.SetStyles(PrintStyle.DoubleHeight),
+                        e.PrintLine($"TOTAL: {total:0.00} EUR")
+                      )
+                    );
 
                 await printer.WriteAsync(
                   ByteSplicer.Combine(

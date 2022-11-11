@@ -6,5 +6,6 @@
         public string Cashier { get; set; }
         public ShoppingCartItem[] ShoppingCartItems { get; set; }
         public string FiscalData { get; set; }
+        public string PosUniqueIdentifier { get; set; }
     }
 }
