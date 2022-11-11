@@ -74,11 +74,15 @@ namespace Portalum.Fiscalization.SimplePos.Services
                 }
             };
 
-            var httpClient = new HttpClient();
+            using var httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("http://localhost:5618");
 
             var efstaClient = new EfstaClient(new NullLogger<EfstaClient>(), httpClient);
-            var response = await efstaClient.RegisterAsync(registerRequest, "ATU1234");
+            var response = await efstaClient.RegisterAsync(registerRequest, "ATU57780814");
+            if (response == null)
+            {
+                return false;
+            }
 
             //Console.WriteLine(response.TransactionCompletion.Result.ResultCode);
 
@@ -92,51 +96,58 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     PrinterName = "TestPrinter"
                 });
 
-            var e = new EPSON();
-            await printer.WriteAsync(
-              ByteSplicer.Combine(
-                e.CenterAlign(),
-                e.PrintLine(""),
-                e.PrintLine("PORTALUM"),
-                e.PrintLine("Riedgasse 50"),
-                e.PrintLine("6850 Dornbirn"),
-                e.PrintLine(""),
-                e.PrintLine("BelegNummer: 12345"),
-                e.PrintLine(""),
-                e.SetStyles(PrintStyle.Underline),
-                e.PrintLine("Es bediente sie Reinhard Feuerstein"),
-                e.SetStyles(PrintStyle.None),
-                e.PrintLine("")
-              )
-            );
-
-            foreach (var shoppingCartItem in shoppingCartItems)
+            try
             {
-                var price = shoppingCartItem.PricePerUnit * shoppingCartItem.Quantity;
+                var e = new EPSON();
+                await printer.WriteAsync(
+                  ByteSplicer.Combine(
+                    e.CenterAlign(),
+                    e.PrintLine(""),
+                    e.PrintLine("PORTALUM"),
+                    e.PrintLine("Riedgasse 50"),
+                    e.PrintLine("6850 Dornbirn"),
+                    e.PrintLine(""),
+                    e.PrintLine("BelegNummer: 12345"),
+                    e.PrintLine(""),
+                    e.SetStyles(PrintStyle.Underline),
+                    e.PrintLine("Es bediente sie Reinhard Feuerstein"),
+                    e.SetStyles(PrintStyle.None),
+                    e.PrintLine("")
+                  )
+                );
+
+                foreach (var shoppingCartItem in shoppingCartItems)
+                {
+                    var price = shoppingCartItem.PricePerUnit * shoppingCartItem.Quantity;
+
+                    await printer.WriteAsync(
+                      ByteSplicer.Combine(
+                        e.LeftAlign(),
+                        e.SetStyles(PrintStyle.DoubleHeight),
+                        e.PrintLine($"{shoppingCartItem.Quantity}x {shoppingCartItem.ArticleName,-30}{price:0.00} EUR")
+                      )
+                    );
+                }
 
                 await printer.WriteAsync(
                   ByteSplicer.Combine(
+                    e.PrintLine(""),
                     e.LeftAlign(),
-                    e.SetStyles(PrintStyle.DoubleHeight),
-                    e.PrintLine($"{shoppingCartItem.Quantity}x {shoppingCartItem.ArticleName, -30}{price:0.00} EUR")
+                    e.SetStyles(PrintStyle.FontB),
+                    e.PrintLine(""),
+                    e.PrintLine(""),
+                    e.CenterAlign(),
+                    e.PrintQRCode(response.TransactionCompletion.FiscalData.Code, TwoDimensionCodeType.QRCODE_MODEL2, Size2DCode.LARGE, CorrectionLevel2DCode.PERCENT_7),
+                    e.PrintLine(""),
+                    e.FullCutAfterFeed(10)
+
                   )
                 );
             }
-
-            await printer.WriteAsync(
-              ByteSplicer.Combine(
-                e.PrintLine(""),
-                e.LeftAlign(),
-                e.SetStyles(PrintStyle.FontB),
-                e.PrintLine(""),
-                e.PrintLine(""),
-                e.CenterAlign(),
-                e.PrintQRCode(response.TransactionCompletion.FiscalData.Code, TwoDimensionCodeType.QRCODE_MODEL2, Size2DCode.LARGE, CorrectionLevel2DCode.PERCENT_7),
-                e.PrintLine(""),
-                e.FullCutAfterFeed(10)
-                
-              )
-            );
+            catch (Exception exception)
+            {
+                return false;
+            }
 
             return true;
         }

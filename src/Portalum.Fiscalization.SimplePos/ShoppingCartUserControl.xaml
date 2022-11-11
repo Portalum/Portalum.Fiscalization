@@ -11,14 +11,34 @@
         <ItemsControl ItemsSource="{Binding}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Label Content="{Binding}"
-                        Padding="10"
-                        Background="#607686"
-                        Foreground="White"
-                        BorderThickness="0,0,0,1"
-                        BorderBrush="white"
-                        FontWeight="Bold"
-                      />
+                    <DockPanel Background="#607686">
+                        <Border
+                            BorderBrush="White"
+                            BorderThickness="0,0,0,1">
+                            <DockPanel>
+                                <Label Content="{Binding Quantity}"
+                                    ContentStringFormat="{}{0}x" 
+                                    Padding="10"
+                                    Foreground="White"
+                                    FontWeight="Bold"
+                                    Width="40"
+                                  />
+                                <Label Content="{Binding ArticleName}"
+                                    Width="Auto"
+                                    Padding="10"
+                                    Foreground="White"
+                                    FontWeight="Bold"
+                                  />
+                                <Label Content="{Binding PriceTotal}"
+                                    ContentStringFormat="{}{0:0.00;-0.00} €" 
+                                    HorizontalAlignment="Right"
+                                    Padding="10"
+                                    Foreground="White"
+                                    FontWeight="Bold"
+                                />
+                            </DockPanel>
+                        </Border>
+                    </DockPanel>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>

@@ -37,6 +37,30 @@ namespace Portalum.Fiscalization.SimplePos.Repositories
                     EanCode = "4015100292312",
                     GrossPrice = 10.0m,
                     Tax = 20
+                },
+                new Article
+                {
+                    Id = 4,
+                    Name = "1000 Blatt Kopierpapier",
+                    EanCode = "4251529808516",
+                    GrossPrice = 20.0m,
+                    Tax = 20
+                },
+                new Article
+                {
+                    Id = 5,
+                    Name = "BIC Kugelschreiber, blau",
+                    EanCode = "0070330172883",
+                    GrossPrice = 1.99m,
+                    Tax = 20
+                },
+                new Article
+                {
+                    Id = 6,
+                    Name = "Heineken Bier EW 6x0",
+                    EanCode = "8712000900038",
+                    GrossPrice = 8.40m,
+                    Tax = 20
                 }
             };
         }

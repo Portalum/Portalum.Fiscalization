@@ -7,9 +7,15 @@
         public int Quantity { get; set; }
         public decimal PricePerUnit { get; set; }
 
-        public override string ToString()
+        public decimal PriceTotal
         {
-            return $"{this.Quantity}x {this.ArticleName} {this.Quantity * this.PricePerUnit}€";
+            get { return this.Quantity * this.PricePerUnit; }
         }
+
+        //public override string ToString()
+        //{
+        //    var totalPrice = this.Quantity * this.PricePerUnit;
+        //    return $"{this.Quantity}x {this.ArticleName.PadRight(60 - this.ArticleName.Length, ' ')} {totalPrice:0.00}€";
+        //}
     }
 }
