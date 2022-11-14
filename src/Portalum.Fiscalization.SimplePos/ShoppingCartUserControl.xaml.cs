@@ -4,6 +4,7 @@ using Portalum.Fiscalization.SimplePos.Models;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using Portalum.Fiscalization.SimplePos.Services;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace Portalum.Fiscalization.SimplePos
@@ -37,11 +38,12 @@ namespace Portalum.Fiscalization.SimplePos
             this.DataContext = itemCollection;
         }
 
-        private async void Button_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void Button_Click(object sender, RoutedEventArgs e)
         {
             var items = await this._shoppingCartService.GetItemsAsync();
             if (!await this._accountingService.PrintReceiptAsync(items))
             {
+                MessageBox.Show("Cannot print receipt, check printer config and efsta config", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 

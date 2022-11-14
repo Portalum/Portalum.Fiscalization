@@ -25,9 +25,8 @@ namespace Portalum.Fiscalization.SimplePos.Repositories
                 new Article
                 {
                     Id = 2,
-                    Name = "Eier Mie Nudeln",
-                    EanCode = "4023900540564",
-                    GrossPrice = 5.0m,
+                    Name = "Wiener Schnitzel",
+                    GrossPrice = 15.0m,
                     Tax = 10
                 },
                 new Article
