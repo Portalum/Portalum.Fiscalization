@@ -3,7 +3,10 @@ using Portalum.Fiscalization.SimplePos.Helper;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using Portalum.Fiscalization.SimplePos.Services;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 
 namespace Portalum.Fiscalization.SimplePos.DependencyInjection
@@ -41,6 +44,30 @@ namespace Portalum.Fiscalization.SimplePos.DependencyInjection
             else if (countryCode.Equals("de", StringComparison.OrdinalIgnoreCase))
             {
                 await DockerHelper.StartAsync("efstait/efsta_de");
+
+                var formContent = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("Sign_require", "TSE_Sim"),
+                    //new KeyValuePair<string, string>("Offline", ""),
+                    //new KeyValuePair<string, string>("Badge", ""),
+                    //new KeyValuePair<string, string>("Proxy", ""),
+                    //new KeyValuePair<string, string>("TaxId", ""),
+                    //new KeyValuePair<string, string>("Sign_Cfg", ""),
+                    //new KeyValuePair<string, string>("RN_TT", ""),
+                    //new KeyValuePair<string, string>("Password", ""),
+                    //new KeyValuePair<string, string>("Update_disable", ""),
+                    //new KeyValuePair<string, string>("HttpServer_Port", "5620"),
+                    //new KeyValuePair<string, string>("RootPath", ""),
+                    //new KeyValuePair<string, string>("DiskQuota", "1000"),
+                    //new KeyValuePair<string, string>("Attributes", ""),
+                    //new KeyValuePair<string, string>("Notes", ""),
+                    //new KeyValuePair<string, string>("@save", "save")
+                });
+
+                await Task.Delay(1000);
+
+                using var httpClient = new HttpClient();
+                var response = await httpClient.PostAsync("http://localhost:5618/profile?RN=def", formContent);
             }
         }
 
