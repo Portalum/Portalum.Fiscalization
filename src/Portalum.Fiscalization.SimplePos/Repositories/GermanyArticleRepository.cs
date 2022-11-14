@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Portalum.Fiscalization.SimplePos.Repositories
 {
-    public class ArticleRepository : IArticleRepository
+    public class GermanyArticleRepository : IArticleRepository
     {
         public readonly Article[] _articles;
 
-        public ArticleRepository()
+        public GermanyArticleRepository()
         {
             this._articles = new Article[]
             {
@@ -20,7 +20,7 @@ namespace Portalum.Fiscalization.SimplePos.Repositories
                     Name = "Cola 0,3",
                     EanCode = "5449000050205",
                     GrossPrice = 2.5m,
-                    Tax = 20
+                    Tax = 19
                 },
                 new Article
                 {
@@ -28,7 +28,7 @@ namespace Portalum.Fiscalization.SimplePos.Repositories
                     Name = "Eier Mie Nudeln",
                     EanCode = "4023900540564",
                     GrossPrice = 5.0m,
-                    Tax = 10
+                    Tax = 7
                 },
                 new Article
                 {
@@ -36,7 +36,7 @@ namespace Portalum.Fiscalization.SimplePos.Repositories
                     Name = "Shampoo For Men",
                     EanCode = "4015100292312",
                     GrossPrice = 10.0m,
-                    Tax = 20
+                    Tax = 19
                 },
                 new Article
                 {
@@ -44,7 +44,7 @@ namespace Portalum.Fiscalization.SimplePos.Repositories
                     Name = "1000 Blatt Kopierpapier",
                     EanCode = "4251529808516",
                     GrossPrice = 20.0m,
-                    Tax = 20
+                    Tax = 19
                 },
                 new Article
                 {
@@ -52,7 +52,7 @@ namespace Portalum.Fiscalization.SimplePos.Repositories
                     Name = "BIC Kugelschreiber, blau",
                     EanCode = "0070330172883",
                     GrossPrice = 1.99m,
-                    Tax = 20
+                    Tax = 19
                 },
                 new Article
                 {
@@ -60,7 +60,7 @@ namespace Portalum.Fiscalization.SimplePos.Repositories
                     Name = "Heineken Bier EW 6x0",
                     EanCode = "8712000900038",
                     GrossPrice = 8.40m,
-                    Tax = 20
+                    Tax = 19
                 }
             };
         }

@@ -18,14 +18,20 @@ namespace Portalum.Fiscalization.SimplePos.Services
     public class AccountingService : IAccountingService
     {
         private readonly IArticleRepository _articleRepository;
+        private readonly ITaxGroupService _taxGroupService;
+
         private readonly string _dataFile = "SequentialReceiptNumber.data";
         private ulong _lastSequentialReceiptNumber;
         private readonly HttpClient _httpClient;
         private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
-        public AccountingService(IArticleRepository articleRepository)
+        public AccountingService(
+            IArticleRepository articleRepository,
+            ITaxGroupService taxGroupService)
         {
             this._articleRepository = articleRepository;
+            this._taxGroupService = taxGroupService;
+
             this.LoadLastSequentialReceiptNumberAsync().GetAwaiter().GetResult();
 
             this._httpClient = new HttpClient();
@@ -64,60 +70,6 @@ namespace Portalum.Fiscalization.SimplePos.Services
             await File.WriteAllTextAsync(this._dataFile, $"{this._lastSequentialReceiptNumber}", cancellationToken);
         }
 
-        private string GetTaxGroupCodeAustria(decimal tax)
-        {
-            switch (tax)
-            {
-                case 20:
-                    return "A";
-                case 10:
-                    return "B";
-                case 13:
-                    return "C";
-                case 0:
-                    return "D";
-                case 19:
-                    return "E";
-                case 7:
-                    return "F";
-                case 5:
-                    return "G";
-
-                default:
-                    break;
-            }
-
-            return "";
-        }
-
-        private string GetTaxGroupCodeGermany(decimal tax)
-        {
-            switch (tax)
-            {
-                case 19:
-                    return "A";
-                case 7:
-                    return "B";
-                case 10.7m:
-                    return "C";
-                case 5.5m:
-                    return "D";
-                case 0:
-                    return "E";
-                case 16:
-                    return "H";
-                case 5:
-                    return "I";
-                case 9.5m:
-                    return "J";
-
-                default:
-                    break;
-            }
-
-            return "";
-        }
-
         public async Task<bool> PrintReceiptAsync(ShoppingCartItem[] shoppingCartItems)
         {
             System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
@@ -145,7 +97,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     Quantity = $"{item.Quantity}",
                     Description = article.Name,
                     //UnitPrice = $"{item.PricePerUnit:0.00}",
-                    TaxGroup = this.GetTaxGroupCodeGermany(article.Tax)
+                    TaxGroup = this._taxGroupService.GetTaxGroupCode(article.Tax)
                 };
             });
 
@@ -158,7 +110,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     Quantity = item.Quantity,
                     UnitPrice = item.PricePerUnit,
                     Tax = article.Tax,
-                    TaxGroup = this.GetTaxGroupCodeGermany(article.Tax)
+                    TaxGroup = this._taxGroupService.GetTaxGroupCode(article.Tax)
                 };
             });
 
@@ -299,7 +251,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     );
                 }
 
-                var total = printJobData.ShoppingCartItems.Select(o => o.Quantity * o.PriceTotal).Sum();
+                var total = printJobData.ShoppingCartItems.Select(o => o.PriceTotal).Sum();
 
                 await printer.WriteAsync(
                       ByteSplicer.Combine(
