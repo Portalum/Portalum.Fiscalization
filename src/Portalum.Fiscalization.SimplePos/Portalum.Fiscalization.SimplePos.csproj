@@ -8,26 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Docker.DotNet" Version="3.125.12" />
     <PackageReference Include="ESCPOS_NET" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Portalum.Fiscalization.Docker\Portalum.Fiscalization.Docker.csproj" />
+    <ProjectReference Include="..\Portalum.Fiscalization.Middleware\Portalum.Fiscalization.Middleware.csproj" />
     <ProjectReference Include="..\Portalum.Fiscalization\Portalum.Fiscalization.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="ShoppingCartUserControl.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Update="ShoppingCartUserControl.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿namespace Portalum.Fiscalization.SimplePos.Services
+﻿namespace Portalum.Fiscalization.Middleware.Services
 {
     public interface ITaxGroupService
     {

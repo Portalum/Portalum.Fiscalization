@@ -1,41 +1,102 @@
 ﻿using ESCPOS_NET;
 using ESCPOS_NET.Emitters;
 using ESCPOS_NET.Utilities;
-using Microsoft.Extensions.Logging.Abstractions;
-using Portalum.Fiscalization.Models;
+using Portalum.Fiscalization.Middleware;
 using Portalum.Fiscalization.SimplePos.Models;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using System;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Portalum.Fiscalization.SimplePos.Services
 {
-    public class AccountingService : IAccountingService
+    public class AccountingService : IAccountingService, IDisposable
     {
         private readonly IArticleRepository _articleRepository;
-        private readonly ITaxGroupService _taxGroupService;
 
         private readonly string _dataFile = "SequentialReceiptNumber.data";
         private ulong _lastSequentialReceiptNumber;
-        private readonly HttpClient _httpClient;
         private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
+        private readonly FiscalizationMiddleware _fiscalizationMiddleware;
 
         public AccountingService(
             IArticleRepository articleRepository,
-            ITaxGroupService taxGroupService)
+            EfstaClient efstaClient)
         {
             this._articleRepository = articleRepository;
-            this._taxGroupService = taxGroupService;
 
             this.LoadLastSequentialReceiptNumberAsync().GetAwaiter().GetResult();
 
-            this._httpClient = new HttpClient();
-            this._httpClient.BaseAddress = new Uri("http://localhost:5618");
+            var fiscalizationConfig = this.LoadFiscalizationConfig();
+            var fiscalizationCountryCode = FiscalizationCountryCode.Unknown;
+
+            var countryCode = ConfigurationManager.AppSettings["CountryCode"];
+            if (countryCode.Equals("de", StringComparison.OrdinalIgnoreCase))
+            {
+                fiscalizationCountryCode = FiscalizationCountryCode.DE;
+            }
+            else if (countryCode.Equals("at", StringComparison.OrdinalIgnoreCase))
+            {
+                fiscalizationCountryCode = FiscalizationCountryCode.AT;
+            }
+
+            this._fiscalizationMiddleware = new FiscalizationMiddleware(
+                fiscalizationCountryCode,
+                fiscalizationConfig,
+                efstaClient
+            );
+
+            this._fiscalizationMiddleware.GetNextSequentialReceiptNumber += this.GetNextSequentialReceiptNumberAsync;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            // Dispose of unmanaged resources.
+            this.Dispose(true);
+
+            // Suppress finalization.
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        /// <param name="disposing"></param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                this._fiscalizationMiddleware.GetNextSequentialReceiptNumber -= this.GetNextSequentialReceiptNumberAsync;
+            }
+        }
+
+        private async Task<ulong> GetNextSequentialReceiptNumberAsync()
+        {
+            this._lastSequentialReceiptNumber++;
+            await this.SaveLastSequentialReceiptNumberAsync();
+            return this._lastSequentialReceiptNumber;
+        }
+
+        private FiscalizationConfig LoadFiscalizationConfig()
+        {
+            var storeId = ConfigurationManager.AppSettings["StroreId"];
+            var cashRegisterTerminalNumber = ConfigurationManager.AppSettings["CashRegisterTerminalNumber"];
+            var operatorId = ConfigurationManager.AppSettings["OperatorId"];
+            var operatorName = ConfigurationManager.AppSettings["OperatorName"];
+            var vatIdentificationNumber = ConfigurationManager.AppSettings["VatIdentificationNumber"];
+
+            return new FiscalizationConfig
+            {
+                StroreId = storeId,
+                CashRegisterTerminalNumber = cashRegisterTerminalNumber,
+                OperatorId = operatorId,
+                OperatorName = operatorName,
+                VatIdentificationNumber = vatIdentificationNumber
+            };
         }
 
         private async Task LoadLastSequentialReceiptNumberAsync(CancellationToken cancellationToken = default)
@@ -72,129 +133,46 @@ namespace Portalum.Fiscalization.SimplePos.Services
 
         public async Task<bool> PrintReceiptAsync(ShoppingCartItem[] shoppingCartItems)
         {
-            System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
-
-            var sumTotal = shoppingCartItems.Select(item => item.Quantity * item.PricePerUnit).Sum();
-
             var articles = await this._articleRepository.QueryAsync("");
 
-            var storeId = ConfigurationManager.AppSettings["StroreId"];
-            var cashRegisterTerminalNumber = ConfigurationManager.AppSettings["CashRegisterTerminalNumber"];
-            var operatorId = ConfigurationManager.AppSettings["OperatorId"];
-            var operatorName = ConfigurationManager.AppSettings["OperatorName"];
-            var vatIdentificationNumber = ConfigurationManager.AppSettings["VatIdentificationNumber"];
-            var receiptPrinterIpAddress = ConfigurationManager.AppSettings["ReceiptPrinterIpAddress"];
-
-            var elements = shoppingCartItems.Select(item =>
+            foreach (var shoppingCartItem in shoppingCartItems)
             {
-                var article = articles.Where(article => article.Id == item.ArticleId).FirstOrDefault();
+                var article = articles.Where(article => article.Id == shoppingCartItem.ArticleId).FirstOrDefault();
 
-                return new PositionElementArticle
+                this._fiscalizationMiddleware.AddArticle(new Middleware.Models.Article
                 {
-                    ItemNumber = article.EanCode,
-                    ItemIdentity = $"{article.Id}",
-                    PositionAmount = $"{item.Quantity * item.PricePerUnit:0.00}",
-                    Quantity = $"{item.Quantity}",
-                    Description = article.Name,
-                    //UnitPrice = $"{item.PricePerUnit:0.00}",
-                    TaxGroup = this._taxGroupService.GetTaxGroupCode(article.Tax)
-                };
-            });
-
-            var elementsWithTaxGroup = shoppingCartItems.Select(item =>
-            {
-                var article = articles.Where(article => article.Id == item.ArticleId).FirstOrDefault();
-
-                return new
-                {
-                    Quantity = item.Quantity,
-                    UnitPrice = item.PricePerUnit,
-                    Tax = article.Tax,
-                    TaxGroup = this._taxGroupService.GetTaxGroupCode(article.Tax)
-                };
-            });
-
-            var taxTempInfos = elementsWithTaxGroup.GroupBy(o => new { o.TaxGroup, o.Tax }).Select(o => new
-            {
-                TaxGroup = o.Key.TaxGroup,
-                Tax = o.Key.Tax,
-                GrossAmount = o.Select(x => x.Quantity * x.UnitPrice).Sum()
-            });
-
-            var taxElements = taxTempInfos.Select(o =>
-            {
-                var netAmount = Math.Round(o.GrossAmount / (1 + (o.Tax / 100)), 2);
-
-                return new TaxElement
-                {
-                    TaxGroup = o.TaxGroup,
-                    GrossAmount = $"{o.GrossAmount:0.00}",
-                    TaxAmount = $"{o.GrossAmount - netAmount:0.00}",
-                    TaxPercent = $"{o.Tax:0.00}",
-                    NetAmount = $"{netAmount:0.00}"
-                };
-            }).ToArray();
-
-            var finishRequest = new TransactionFinishRequest
-            {
-                Transaction = new TransactionFinishData
-                {
-                    EfstaSimpleReceipt = new EfstaSimpleReceipt
-                    {
-                        StroreId = storeId,
-                        CashRegisterTerminalNumber = cashRegisterTerminalNumber,
-                        OperatorId = operatorId,
-                        OperatorName = operatorName,
-                        ReceiptDate = DateTime.Now,
-                        ProcessStartTimestamp = DateTime.Now.AddMinutes(-1),
-                        SequentialReceiptNumber = $"{this._lastSequentialReceiptNumber}",
-                        Total = $"{sumTotal:0.00}",
-                        PositionElements = elements.ToArray(),
-                        PaymentElements = new PaymentElement[]
-                        {
-                            new PaymentElement
-                            {
-                                Description = "Cash",
-                                PaymentAmount = $"{sumTotal:0.00}"
-                            }
-                        },
-                        TaxElements = taxElements
-                    }
-                }
-            };
+                     UniqueId = $"{shoppingCartItem.ArticleId}",
+                     Amount = shoppingCartItem.PricePerUnit,
+                     Quantity = shoppingCartItem.Quantity,
+                     Description = shoppingCartItem.ArticleName,
+                     EanCode = article.EanCode,
+                     Tax = article.Tax
+                });
+            }
 
             if (await this._syncLock.WaitAsync(10000))
             {
                 try
                 {
-                    this._lastSequentialReceiptNumber++;
+                    var response = await this._fiscalizationMiddleware.FinishAsync();
 
-                    var efstaClient = new EfstaClient(new NullLogger<EfstaClient>(), this._httpClient);
-                    var response = await efstaClient.TransactionFinishAsync(finishRequest, vatIdentificationNumber);
-                    if (response == null)
-                    {
-                        return false;
-                    }
-                    if (string.IsNullOrEmpty(response.TransactionCompletion.FiscalData?.Code))
-                    {
-                        return false;
-                    }
-
-                    
-
-                    await this.SaveLastSequentialReceiptNumberAsync();
+                    var receiptPrinterIpAddress = ConfigurationManager.AppSettings["ReceiptPrinterIpAddress"];
+                    var storeId = ConfigurationManager.AppSettings["StroreId"];
+                    var cashRegisterTerminalNumber = ConfigurationManager.AppSettings["CashRegisterTerminalNumber"];
+                    var operatorName = ConfigurationManager.AppSettings["OperatorName"];
 
                     var printJobData = new PrintJobData
                     {
-                        AdditionalLines = response.TransactionCompletion.Result.Warnings,
                         ShoppingCartItems = shoppingCartItems,
+                        ReceiptPrinterIpAddress = receiptPrinterIpAddress,
+                        FiscalData = response.FiscalCode,
+                        AdditionalLines = response.Warnings,
                         Cashier = operatorName,
                         PosUniqueIdentifier = $"{storeId}-{cashRegisterTerminalNumber}",
-                        ReceiptPrinterIpAddress = receiptPrinterIpAddress,
-                        FiscalData = response.TransactionCompletion.FiscalData.Code
                     };
 
                     return await this.PrintReceiptAsync(printJobData);
+
                 }
                 finally
                 {

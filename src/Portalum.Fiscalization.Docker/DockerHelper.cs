@@ -1,11 +1,7 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Portalum.Fiscalization.SimplePos.Helpers
+namespace Portalum.Fiscalization.Docker
 {
     public static class DockerHelper
     {
@@ -36,7 +32,7 @@ namespace Portalum.Fiscalization.SimplePos.Helpers
             }
         }
 
-        public static async Task<bool> StartAsync(string dockerImage)
+        public static async Task<bool> StartEfstaEfrAsync(string dockerImage)
         {
             var createRequest = new CreateContainerParameters
             {

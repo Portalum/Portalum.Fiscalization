@@ -63,8 +63,7 @@ namespace Portalum.Fiscalization
 
             try
             {
-                //TODO: taxId???
-                //TODO: client???
+                //TODO: Check Parameter are required taxId and client???
 
                 //using var response = await this._httpClient.PostAsJsonAsync($"/register?RN={client}&TaxId={taxId}",
                 using var response = await this._httpClient.PostAsJsonAsync($"/register",
