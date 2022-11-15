@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Portalum.Fiscalization.SimplePos.Helper;
+using Portalum.Fiscalization.SimplePos.Helpers;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using Portalum.Fiscalization.SimplePos.Services;
 using System;

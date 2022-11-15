@@ -2,11 +2,10 @@
 using Docker.DotNet.Models;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Portalum.Fiscalization.SimplePos.Helper
+namespace Portalum.Fiscalization.SimplePos.Helpers
 {
     public static class DockerHelper
     {

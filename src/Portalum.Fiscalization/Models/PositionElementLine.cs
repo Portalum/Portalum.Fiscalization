@@ -9,10 +9,10 @@ namespace Portalum.Fiscalization.Models
         public override string Type { get; } = "Lin";
 
         /// <summary>
-        /// Line Amount
+        /// Line Amount, rext in amount column, can show subtotal amount
         /// </summary>
         /// <remarks>
-        /// Text in amount column, can show subtotal amount
+        /// <c>Efsta EFR Field: LAmt</c>
         /// </remarks>
         [JsonPropertyName("LAmt")]
         public string LineAmount { get; set; }
@@ -20,6 +20,9 @@ namespace Portalum.Fiscalization.Models
         /// <summary>
         /// Description
         /// </summary>
+        /// <remarks>
+        /// <c>Efsta EFR Field: Dsc</c>
+        /// </remarks>
         [JsonPropertyName("Dsc")]
         public string Description { get; set; }
     }

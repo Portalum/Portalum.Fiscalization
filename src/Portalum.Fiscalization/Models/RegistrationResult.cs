@@ -23,6 +23,7 @@ namespace Portalum.Fiscalization.Models
         /// <summary>
         /// Warnings
         /// </summary>
-        public string[] Warning { get; set; }
+        [JsonPropertyName("Warning")]
+        public string[] Warnings { get; set; }
     }
 }

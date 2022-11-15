@@ -85,6 +85,21 @@ var registerRequest = new RegisterRequest
     }
 };
 
+var transactionStartRequest = new TransactionStartRequest
+{
+    Temp = new Temp
+    {
+        EfstaSimpleReceipt = new EfstaSimpleReceipt
+        {
+            StroreId = "1000",
+            CashRegisterTerminalNumber = "1"
+        }
+    }
+};
+
+var response1 = await client.Register1Async(transactionStartRequest, "ATU57780814");
+var x = response1.Temp.Fis.OperationStart;
+
 var state = await client.GetStateAsync();
 if (!state.Online)
 {

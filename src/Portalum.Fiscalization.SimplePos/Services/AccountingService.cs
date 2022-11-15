@@ -186,7 +186,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
 
                     var printJobData = new PrintJobData
                     {
-                        AdditionalLines = response.TransactionCompletion.Result.Warning,
+                        AdditionalLines = response.TransactionCompletion.Result.Warnings,
                         ShoppingCartItems = shoppingCartItems,
                         Cashier = operatorName,
                         PosUniqueIdentifier = $"{storeId}-{cashRegisterTerminalNumber}",
