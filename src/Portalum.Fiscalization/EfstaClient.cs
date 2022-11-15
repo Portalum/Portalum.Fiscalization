@@ -41,8 +41,9 @@ namespace Portalum.Fiscalization
             };
         }
 
+
         /// <summary>
-        /// Register Transaction
+        /// Transaction start
         /// </summary>
         /// <param name="request"></param>
         /// <param name="taxId"></param>
@@ -50,8 +51,62 @@ namespace Portalum.Fiscalization
         /// <param name="cancellationToken"></param>
         /// <param name="timeoutInSeconds"></param>
         /// <returns></returns>
-        public async Task<RegisterResponse> RegisterAsync(
-            RegisterRequest request,
+        public async Task<TransactionStartResponse> TransactionStartAsync(
+            TransactionStartRequest request,
+            string taxId,
+            string client = "def",
+            CancellationToken cancellationToken = default,
+            int timeoutInSeconds = 10)
+        {
+            using var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutInSeconds));
+            using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token, timeoutCancellationTokenSource.Token);
+
+            try
+            {
+                //TODO: taxId???
+                //TODO: client???
+
+                //using var response = await this._httpClient.PostAsJsonAsync($"/register?RN={client}&TaxId={taxId}",
+                using var response = await this._httpClient.PostAsJsonAsync($"/register",
+                    request,
+                    this._jsonSerializerOptions,
+                    linkedCancellationTokenSource.Token);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    this._logger.LogWarning($"{nameof(TransactionStartAsync)} - {response.StatusCode}");
+                    return null;
+                }
+
+                var json = await response.Content.ReadAsStringAsync(linkedCancellationTokenSource.Token);
+
+                if (this._logger.IsEnabled(LogLevel.Trace))
+                {
+                    var prettyJson = JsonHelper.PrettyJson(json);
+                    this._logger.LogTrace($"{nameof(TransactionStartAsync)} - {prettyJson}");
+                }
+
+                return JsonSerializer.Deserialize<TransactionStartResponse>(json);
+            }
+            catch (Exception exception)
+            {
+                this._logger.LogError(exception, $"{nameof(TransactionFinishAsync)}");
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Transaction finish
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="taxId"></param>
+        /// <param name="client"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="timeoutInSeconds"></param>
+        /// <returns></returns>
+        public async Task<TransactionFinishResponse> TransactionFinishAsync(
+            TransactionFinishRequest request,
             string taxId,
             string client = "def",
             CancellationToken cancellationToken = default,
@@ -69,7 +124,7 @@ namespace Portalum.Fiscalization
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    this._logger.LogWarning($"{nameof(RegisterAsync)} - {response.StatusCode}");
+                    this._logger.LogWarning($"{nameof(TransactionFinishAsync)} - {response.StatusCode}");
                     return null;
                 }
 
@@ -78,66 +133,14 @@ namespace Portalum.Fiscalization
                 if (this._logger.IsEnabled(LogLevel.Trace))
                 {
                     var prettyJson = JsonHelper.PrettyJson(json);
-                    this._logger.LogTrace($"{nameof(RegisterAsync)} - {prettyJson}");
+                    this._logger.LogTrace($"{nameof(TransactionFinishAsync)} - {prettyJson}");
                 }
 
-                return JsonSerializer.Deserialize<RegisterResponse>(json);
+                return JsonSerializer.Deserialize<TransactionFinishResponse>(json);
             }
             catch (Exception exception)
             {
-                this._logger.LogError(exception, $"{nameof(RegisterAsync)}");
-            }
-
-            return null;
-        }
-
-
-        /// <summary>
-        /// Register Transaction test test
-        /// </summary>
-        /// <param name="request"></param>
-        /// <param name="taxId"></param>
-        /// <param name="client"></param>
-        /// <param name="cancellationToken"></param>
-        /// <param name="timeoutInSeconds"></param>
-        /// <returns></returns>
-        public async Task<TransactionStartResponse> Register1Async(
-            TransactionStartRequest request,
-            string taxId,
-            string client = "def",
-            CancellationToken cancellationToken = default,
-            int timeoutInSeconds = 10)
-        {
-            using var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutInSeconds));
-            using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token, timeoutCancellationTokenSource.Token);
-
-            try
-            {
-                //using var response = await this._httpClient.PostAsJsonAsync($"/register?RN={client}&TaxId={taxId}",
-                using var response = await this._httpClient.PostAsJsonAsync($"/register",
-                    request,
-                    this._jsonSerializerOptions,
-                    linkedCancellationTokenSource.Token);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    this._logger.LogWarning($"{nameof(Register1Async)} - {response.StatusCode}");
-                    return null;
-                }
-
-                var json = await response.Content.ReadAsStringAsync(linkedCancellationTokenSource.Token);
-
-                if (this._logger.IsEnabled(LogLevel.Trace))
-                {
-                    var prettyJson = JsonHelper.PrettyJson(json);
-                    this._logger.LogTrace($"{nameof(Register1Async)} - {prettyJson}");
-                }
-
-                return JsonSerializer.Deserialize<TransactionStartResponse>(json);
-            }
-            catch (Exception exception)
-            {
-                this._logger.LogError(exception, $"{nameof(RegisterAsync)}");
+                this._logger.LogError(exception, $"{nameof(TransactionFinishAsync)}");
             }
 
             return null;

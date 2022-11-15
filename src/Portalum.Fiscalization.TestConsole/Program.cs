@@ -21,9 +21,9 @@ services.AddHttpClient<EfstaClient>(configure =>
 
 var client = services.BuildServiceProvider().GetService<EfstaClient>();
 
-var registerRequest = new RegisterRequest
+var finishRequest = new TransactionFinishRequest
 {
-    Transaction = new Transaction
+    Transaction = new TransactionFinishData
     {
         EfstaSimpleReceipt = new EfstaSimpleReceipt
         {
@@ -87,7 +87,7 @@ var registerRequest = new RegisterRequest
 
 var transactionStartRequest = new TransactionStartRequest
 {
-    Temp = new Temp
+    Transaction = new TransactionStartData
     {
         EfstaSimpleReceipt = new EfstaSimpleReceipt
         {
@@ -97,8 +97,8 @@ var transactionStartRequest = new TransactionStartRequest
     }
 };
 
-var response1 = await client.Register1Async(transactionStartRequest, "ATU57780814");
-var x = response1.Temp.Fis.OperationStart;
+var response1 = await client.TransactionStartAsync(transactionStartRequest, "ATU57780814");
+var x = response1.TransactionCompletion.FiscalData.OperationStart;
 
 var state = await client.GetStateAsync();
 if (!state.Online)
@@ -113,10 +113,10 @@ var stopwatch = new Stopwatch();
 for (var i = 0; i < 100; i++)
 {
     var sequentialReceiptNumber = lastNumber + i;
-    registerRequest.Transaction.EfstaSimpleReceipt.SequentialReceiptNumber = $"{sequentialReceiptNumber}";
+    finishRequest.Transaction.EfstaSimpleReceipt.SequentialReceiptNumber = $"{sequentialReceiptNumber}";
 
     stopwatch.Start();
-    var response = await client.RegisterAsync(registerRequest, "ATU57780814");
+    var response = await client.TransactionFinishAsync(finishRequest, "ATU57780814");
     stopwatch.Stop();
 
     Console.WriteLine($"{response.TransactionCompletion.Result.ResultCode} / {stopwatch.Elapsed.TotalMilliseconds}ms");

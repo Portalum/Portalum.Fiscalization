@@ -135,9 +135,9 @@ namespace Portalum.Fiscalization.SimplePos.Services
                 };
             }).ToArray();
 
-            var registerRequest = new RegisterRequest
+            var finishRequest = new TransactionFinishRequest
             {
-                Transaction = new Transaction
+                Transaction = new TransactionFinishData
                 {
                     EfstaSimpleReceipt = new EfstaSimpleReceipt
                     {
@@ -170,7 +170,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
                     this._lastSequentialReceiptNumber++;
 
                     var efstaClient = new EfstaClient(new NullLogger<EfstaClient>(), this._httpClient);
-                    var response = await efstaClient.RegisterAsync(registerRequest, vatIdentificationNumber);
+                    var response = await efstaClient.TransactionFinishAsync(finishRequest, vatIdentificationNumber);
                     if (response == null)
                     {
                         return false;

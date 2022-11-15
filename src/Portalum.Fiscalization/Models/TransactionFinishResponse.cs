@@ -2,15 +2,15 @@
 
 namespace Portalum.Fiscalization.Models
 {
-    public class RegisterResponse
+    public class TransactionFinishResponse
     {
         /// <summary>
-        /// TransactionCompletion
+        /// Transaction Completion
         /// </summary>
         /// <remarks>
         /// <c>Efsta EFR Field: TraC</c>
         /// </remarks>
         [JsonPropertyName("TraC")]
-        public TransactionCompletion TransactionCompletion { get; set; }
+        public TransactionFinishCompletion TransactionCompletion { get; set; }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Portalum.Fiscalization.Models
 {
-    public class RegisterRequest
+    public class TransactionFinishRequest
     {
         /// <summary>
         /// Transaction
@@ -11,6 +11,6 @@ namespace Portalum.Fiscalization.Models
         /// <c>Efsta EFR Field: Tra</c>
         /// </remarks>
         [JsonPropertyName("Tra")]
-        public Transaction Transaction { get; set; }
+        public TransactionFinishData Transaction { get; set; }
     }
 }

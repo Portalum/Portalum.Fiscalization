@@ -4,16 +4,13 @@ namespace Portalum.Fiscalization.Models
 {
     public class TransactionStartRequest
     {
-        [JsonPropertyName("TraS")]
-        public Temp Temp { get; set; }
-    }
-
-    public class Temp
-    {
         /// <summary>
-        /// EFSTA Simple Receipt
+        /// Transaction
         /// </summary>
-        [JsonPropertyName("ESR")]
-        public EfstaSimpleReceipt EfstaSimpleReceipt { get; set; }
+        /// <remarks>
+        /// <c>Efsta EFR Field: TraS</c>
+        /// </remarks>
+        [JsonPropertyName("TraS")]
+        public TransactionStartData Transaction { get; set; }
     }
 }

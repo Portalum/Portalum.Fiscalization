@@ -1,6 +1,6 @@
 ﻿namespace Portalum.Fiscalization.Models
 {
-    public class FiscalData
+    public class TransactionFinishCompletionFiscalData
     {
         public string Code { get; set; }
         public string Link { get; set; }
