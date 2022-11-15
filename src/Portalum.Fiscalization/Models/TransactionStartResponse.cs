@@ -11,37 +11,34 @@ namespace Portalum.Fiscalization.Models
 
     public class Temp1
     {
-        public int SQ { get; set; }
+        /// <summary>
+        /// Sequence Number
+        /// </summary>
+        /// <remarks>
+        /// <c>Efsta EFR Field: SQ</c>
+        /// </remarks>
+        public int SequenceNumber { get; set; }
 
+        /// <summary>
+        /// Result
+        /// </summary>
+        /// <remarks>
+        /// <c>Efsta EFR Field: Result</c>
+        /// </remarks>
         [JsonPropertyName("Result")]
-        public TempResult Result { get; set; }
+        public EfstaRequestResult Result { get; set; }
 
+        /// <summary>
+        /// Fiscal Data, fiscal Signature
+        /// </summary>
+        /// <remarks>
+        /// <c>Efsta EFR Field: Fis</c>
+        /// </remarks>
         [JsonPropertyName("Fis")]
-        public TempFis Fis { get; set; }
+        public TempFiscalData Fis { get; set; }
     }
 
-    public class TempResult
-    {
-        /// <summary>
-        /// Result Code
-        /// </summary>
-        /// <remarks>
-        /// <c>Efsta EFR Field: RC</c>
-        /// </remarks>
-        [JsonPropertyName("RC")]
-        public string ResultCode { get; set; }
-
-        /// <summary>
-        /// Warnings
-        /// </summary>
-        /// <remarks>
-        /// <c>Efsta EFR Field: Warning</c>
-        /// </remarks>
-        [JsonPropertyName("Warning")]
-        public string[] Warnings { get; set; }
-    }
-
-    public class TempFis
+    public class TempFiscalData
     {
         public int TID { get; set; }
 

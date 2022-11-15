@@ -11,9 +11,9 @@ namespace Portalum.Fiscalization.Models
         public int SequenceNumber { get; set; }
 
         /// <summary>
-        /// Registration Result
+        /// Result
         /// </summary>
-        public RegistrationResult Result { get; set; }
+        public EfstaRequestResult Result { get; set; }
 
         /// <summary>
         /// Fiscal Data

@@ -9,6 +9,9 @@ namespace Portalum.Fiscalization.Models
         /// <summary>
         /// Type
         /// </summary>
+        /// <remarks>
+        /// <c>Efsta EFR Field: _</c>
+        /// </remarks>
         [JsonPropertyName("_")]
         public abstract string Type { get; }
     }

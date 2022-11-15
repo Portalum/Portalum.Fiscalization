@@ -8,6 +8,9 @@ namespace Portalum.Fiscalization.Models
         /// <summary>
         /// Process Id
         /// </summary>
+        /// <remarks>
+        /// <c>Efsta EFR Field: Pid</c>
+        /// </remarks>
         [JsonPropertyName("Pid")]
         public int ProcessId { get; set; }
 
