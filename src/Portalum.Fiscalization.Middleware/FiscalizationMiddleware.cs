@@ -177,14 +177,15 @@ namespace Portalum.Fiscalization.Middleware
                 return null;
             }
 
+
+            this._articles.Clear();
+            this._transactionId = null;
+
             return new FinishResponse
             {
                 FiscalCode = response.TransactionCompletion.FiscalData.Code,
                 Warnings = response.TransactionCompletion.Result.Warnings,
             };
-
-            this._articles.Clear();
-            this._transactionId = null;
         }
     }
 }
