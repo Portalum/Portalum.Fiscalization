@@ -12,7 +12,7 @@ namespace Portalum.Fiscalization.Models
         /// <c>Efsta EFR Field: TID</c>
         /// </remarks>
         [JsonPropertyName("TID")]
-        public int TransactionId { get; set; }
+        public int? TransactionId { get; set; }
 
         /// <summary>
         /// Receipt Date, seconds have to be specified according to fiscal law

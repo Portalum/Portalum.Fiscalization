@@ -1,18 +1,5 @@
-﻿using Portalum.Fiscalization.SimplePos.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
+﻿using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Portalum.Fiscalization.SimplePos
 {
@@ -21,9 +8,31 @@ namespace Portalum.Fiscalization.SimplePos
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly PosPage posPage1 = new PosPage();
+        private readonly PosPage posPage2 = new PosPage();
+
         public MainWindow()
         {
             this.InitializeComponent();
+
+            this.ButtonPos1_Click(null, null);
+        }
+
+        private void ButtonPos1_Click(object sender, RoutedEventArgs e)
+        {
+            this.ButtonPos2.Background = new SolidColorBrush(Color.FromRgb(96, 118, 134));
+            this.ButtonPos1.Background = new SolidColorBrush(Color.FromRgb(152, 192, 17));
+            
+
+            this.NavigationFrame.Navigate(posPage1);
+        }
+
+        private void ButtonPos2_Click(object sender, RoutedEventArgs e)
+        {
+            this.ButtonPos1.Background = new SolidColorBrush(Color.FromRgb(96, 118, 134));
+            this.ButtonPos2.Background = new SolidColorBrush(Color.FromRgb(152, 192, 17));
+
+            this.NavigationFrame.Navigate(posPage2);
         }
     }
 }

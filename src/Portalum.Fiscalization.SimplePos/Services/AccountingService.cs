@@ -139,7 +139,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
             {
                 var article = articles.Where(article => article.Id == shoppingCartItem.ArticleId).FirstOrDefault();
 
-                this._fiscalizationMiddleware.AddArticle(new Middleware.Models.Article
+                await this._fiscalizationMiddleware.AddArticleAsync(new Middleware.Models.Article
                 {
                      UniqueId = $"{shoppingCartItem.ArticleId}",
                      Amount = shoppingCartItem.PricePerUnit,

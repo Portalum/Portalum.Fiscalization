@@ -16,7 +16,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
             CancellationToken cancellationToken = default);
 
         Task RemoveArticleAsync(
-            Article article,
+            int articleId,
             CancellationToken cancellationToken = default);
 
         Task CompletePurchaseAsync(CancellationToken cancellationToken = default);

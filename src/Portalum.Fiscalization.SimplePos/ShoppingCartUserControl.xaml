@@ -11,7 +11,7 @@
         <ItemsControl ItemsSource="{Binding}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <DockPanel Background="#607686">
+                    <DockPanel Background="#607686" MouseDown="DockPanel_MouseDown" Tag="{Binding}">
                         <Border
                             BorderBrush="White"
                             BorderThickness="0,0,0,1">

@@ -1,10 +1,10 @@
 ﻿using Portalum.Fiscalization.Docker;
-using System.Collections.Generic;
-using System.Net.Http;
 using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Configuration;
 
 namespace Portalum.Fiscalization.SimplePos
 {

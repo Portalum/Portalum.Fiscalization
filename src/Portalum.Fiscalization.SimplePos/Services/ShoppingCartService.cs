@@ -62,10 +62,10 @@ namespace Portalum.Fiscalization.SimplePos.Services
         }
 
         public Task RemoveArticleAsync(
-            Article article,
+            int articleId,
             CancellationToken cancellationToken = default)
         {
-            if (!this._items.TryGetValue(article.Id, out var articleCartDetail))
+            if (!this._items.TryGetValue(articleId, out var articleCartDetail))
             {
                 return Task.CompletedTask;
             }
@@ -74,7 +74,7 @@ namespace Portalum.Fiscalization.SimplePos.Services
 
             if (articleCartDetail.Quantity <= 0)
             {
-                this._items.TryRemove(article.Id, out _);
+                this._items.TryRemove(articleId, out _);
             }
 
             this.CollectionChanged?.Invoke();

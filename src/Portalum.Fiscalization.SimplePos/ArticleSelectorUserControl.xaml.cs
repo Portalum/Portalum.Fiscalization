@@ -4,6 +4,7 @@ using Portalum.Fiscalization.SimplePos.Models;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using Portalum.Fiscalization.SimplePos.Services;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Controls;
 
 namespace Portalum.Fiscalization.SimplePos
@@ -13,19 +14,29 @@ namespace Portalum.Fiscalization.SimplePos
     /// </summary>
     public partial class ArticleSelectorUserControl : UserControl
     {
-        private readonly IShoppingCartService _shoppingCartService;
+        private IShoppingCartService _shoppingCartService;
 
         public ArticleSelectorUserControl()
         {
+            if (DesignerProperties.GetIsInDesignMode(this))
+            {
+                // Design-mode specific functionality
+                return;
+            }
+
             var serviceProvider = ServiceContainer.Instance.ServiceProvider;
             var articleRepository = serviceProvider.GetService<IArticleRepository>();
-            this._shoppingCartService = serviceProvider.GetService<IShoppingCartService>();
 
             var articles = articleRepository.QueryAsync("").GetAwaiter().GetResult();
             var articleCollection = new ObservableCollection<Article>(articles);
             this.DataContext = articleCollection;
 
             this.InitializeComponent();
+        }
+
+        public void SetShoppingCartService(IShoppingCartService shoppingCartService)
+        {
+            this._shoppingCartService = shoppingCartService;
         }
 
         private async void ArticleButton_Click(object sender, System.Windows.RoutedEventArgs e)

@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Portalum.Fiscalization.Docker;
 using Portalum.Fiscalization.SimplePos.Repositories;
 using Portalum.Fiscalization.SimplePos.Services;
 using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.Configuration;
-using System.Net.Http;
-using System.Threading.Tasks;
+using System.Windows;
 
 namespace Portalum.Fiscalization.SimplePos.DependencyInjection
 {
@@ -19,6 +17,12 @@ namespace Portalum.Fiscalization.SimplePos.DependencyInjection
 
         private ServiceContainer()
         {
+            if ((bool)(DesignerProperties.IsInDesignModeProperty.GetMetadata(typeof(DependencyObject)).DefaultValue))
+            {
+                //in Design mode
+                return;
+            }
+
             var countryCode = ConfigurationManager.AppSettings["CountryCode"];
             if (countryCode == null)
             {
@@ -48,8 +52,7 @@ namespace Portalum.Fiscalization.SimplePos.DependencyInjection
                 services.AddSingleton<IArticleRepository, GermanyArticleRepository>();
             }
 
-
-            services.AddSingleton<IShoppingCartService, ShoppingCartService>();
+            services.AddTransient<IShoppingCartService, ShoppingCartService>();
             services.AddSingleton<IAccountingService, AccountingService>();
         }
     }

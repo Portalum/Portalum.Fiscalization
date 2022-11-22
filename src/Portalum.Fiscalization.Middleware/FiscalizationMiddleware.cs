@@ -14,6 +14,7 @@ namespace Portalum.Fiscalization.Middleware
         private readonly EfstaClient _efstaClient;
         private readonly List<Article> _articles = new List<Article>();
         private readonly ITaxGroupService _taxGroupService;
+        private int? _transactionId;
 
         public event Func<Task<ulong>> GetNextSequentialReceiptNumber;
 
@@ -66,20 +67,24 @@ namespace Portalum.Fiscalization.Middleware
                 return false;
             }
 
-            //response.TransactionCompletion.FiscalData.TransactionId
+            this._transactionId = response.TransactionCompletion.FiscalData.TransactionId;
 
             return true;
         }
 
-        public bool AddArticle(Article article)
+        public async Task<bool> AddArticleAsync(Article article)
         {
-            //TODO: is first article...?
-            //StartAsync?
+            if (this._articles.Count == 0)
+            {
+                await this.StartAsync();
+            }
 
             this._articles.Add(article);
 
             return true;
         }
+
+        //TODO: Add remove logic
 
         public async Task<FinishResponse> FinishAsync(CancellationToken cancellationToken = default)
         {
@@ -148,6 +153,7 @@ namespace Portalum.Fiscalization.Middleware
                         SequentialReceiptNumber = $"{sequentialReceiptNumber}",
                         Total = FormattableString.Invariant($"{sumTotal:0.00}"),
                         PositionElements = elements.ToArray(),
+                        TransactionId = this._transactionId,
                         PaymentElements = new PaymentElement[]
                         {
                             new PaymentElement
@@ -176,6 +182,9 @@ namespace Portalum.Fiscalization.Middleware
                 FiscalCode = response.TransactionCompletion.FiscalData.Code,
                 Warnings = response.TransactionCompletion.Result.Warnings,
             };
+
+            this._articles.Clear();
+            this._transactionId = null;
         }
     }
 }

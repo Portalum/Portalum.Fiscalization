@@ -7,7 +7,10 @@
         mc:Ignorable="d"
         Title="Simple Pos" Height="450" Width="800">
     <Grid>
-        <local:ArticleSelectorUserControl Background="#FF98C011" Margin="0,0,275,0"/>
-        <local:ShoppingCartUserControl Background="#92a5b3" HorizontalAlignment="Right" Width="275"/>
+        <Button x:Name="ButtonPos1" Content="SAPR1" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top" Click="ButtonPos1_Click" Background="#607686" Foreground="White" Width="80" Height="31" BorderBrush="Transparent"/>
+        <Button x:Name="ButtonPos2" Content="SAPR2" HorizontalAlignment="Left" Margin="79,0,0,0" VerticalAlignment="Top" Click="ButtonPos2_Click" Background="#607686" Foreground="White" Width="80" Height="31" BorderBrush="Transparent"/>
+        <DockPanel Margin="0,30,0,0">
+            <Frame x:Name="NavigationFrame" NavigationUIVisibility="Hidden" />
+        </DockPanel>
     </Grid>
 </Window>
